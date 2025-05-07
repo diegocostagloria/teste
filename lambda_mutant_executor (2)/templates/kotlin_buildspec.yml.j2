@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+    commands:
+      - echo "Instalando dependências"
+      - ./gradlew build -x test
+
+  build:
+    commands:
+      - echo "Executando testes mutantes com PIT para Kotlin"
+      - |
+        ./gradlew pitest \
+        -DtargetClasses={{ config.targetClasses | default('com.empresa.*') }} \
+        -DreportsDirectory={{ config.reportDir | default('build/reports/pitest') }} \
+        {% if config.threshold %}-DmutationThreshold={{ config.threshold }}{% endif %}
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: {{ config.reportDir | default('build/reports/pitest') }}

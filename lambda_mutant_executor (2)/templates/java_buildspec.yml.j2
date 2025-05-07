@@ -1,0 +1,41 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+    commands:
+      - echo "Instalando dependências"
+      - ./mvnw install -DskipTests
+
+  build:
+    commands:
+      - echo "Inserindo configuração do PITEST no pom.xml"
+      - |
+        cat <<EOL > pitest-plugin.xml
+        <plugin>
+          <groupId>org.pitest</groupId>
+          <artifactId>pitest-maven</artifactId>
+          <version>1.9.5</version>
+          <configuration>
+            <targetClasses>{{ config.targetClasses | default('com.empresa.*') }}</targetClasses>
+            <outputFormats>
+              <outputFormat>HTML</outputFormat>
+            </outputFormats>
+            {% if config.threshold %}
+            <mutationThreshold>{{ config.threshold }}{% endif %}
+            <threads>2</threads>
+          </configuration>
+        </plugin>
+        EOL
+
+      - echo "Injetando plugin no POM"
+      - sed -i '/<plugins>/r pitest-plugin.xml' pom.xml
+
+      - echo "Executando testes mutantes"
+      - ./mvnw org.pitest:pitest-maven:mutationCoverage
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: {{ config.reportDir | default('target/pit-reports') }}

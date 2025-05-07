@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - echo "Instalando dependências"
+      - pip install -r requirements.txt
+
+  build:
+    commands:
+      - echo "Executando testes mutantes com MutPy"
+      - |
+        mut.py --target {{ config.targetModule | default('src') }} \
+               --unit-test {{ config.testDir | default('tests') }} \
+               --report-html {{ config.reportDir | default('mutpy-report') }} \
+               {% if config.timeout %}--timeout {{ config.timeout }}{% endif %}
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: {{ config.reportDir | default('mutpy-report') }}
